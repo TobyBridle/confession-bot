@@ -8,6 +8,7 @@ use log::warn;
 use std::env;
 
 mod client;
+mod commands;
 mod db_impl;
 mod models;
 mod schema;
