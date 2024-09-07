@@ -20,10 +20,10 @@ struct Config {
 
 #[tokio::main]
 async fn main() -> Result<(), diesel::result::Error> {
+    pretty_env_logger::init();
     if dotenvy::dotenv().is_err() {
         warn!("Warning: .env file not found.")
     }
-    pretty_env_logger::init();
     let config = Config {
         bot_token: env::var("BOT_TOKEN").expect("BOT_TOKEN set"),
         db_url: env::var("DATABASE_URL").expect("DATABASE_URL set"),
