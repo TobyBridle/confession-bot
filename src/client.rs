@@ -1,29 +1,12 @@
-use log::{error, info};
-use poise::serenity_prelude::{self as serenity, Client, GatewayIntents, Settings};
-use poise::{builtins, Framework, FrameworkError, FrameworkOptions};
+use log::info;
+use poise::serenity_prelude::{self as serenity, Client, FullEvent, GatewayIntents, Settings};
+use poise::{builtins, Framework, FrameworkOptions};
 
 use crate::commands::*;
 
-async fn on_error(err: FrameworkError<'_, Data, Error>) {
-    error!(
-        "Error occured ({}): {}",
-        chrono::Local::now(),
-        err.to_string()
-    )
-}
-
-) -> Result<(), Error> {
-    Ok(())
-}
-
 pub async fn start(bot_token: String) {
     let framework = Framework::builder()
-        .setup(|ctx, ready, framework| {
-            info!(
-                "Logged in as: {}. Currently observing {} guild(s)",
-                ready.user.name,
-                ready.guilds.len()
-            );
+        .setup(|ctx, _, framework| {
             Box::pin(async move {
                 builtins::register_globally(&ctx, &framework.options().commands).await?;
                 Ok(())
@@ -31,6 +14,7 @@ pub async fn start(bot_token: String) {
         })
         .options(FrameworkOptions {
             commands: vec![confess::confession()],
+            event_handler: |ctx, event, _ctx, _a| Box::pin(event_handler(ctx, event, _ctx, _a)),
             on_error: |err| Box::pin(on_error(err)),
             ..Default::default()
         })
