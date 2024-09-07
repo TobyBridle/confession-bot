@@ -1,6 +1,6 @@
-use log::error;
+use log::{error, info};
 use poise::serenity_prelude::{self as serenity, Client, GatewayIntents, Settings};
-use poise::{builtins, CreateReply, Framework, FrameworkError, FrameworkOptions};
+use poise::{builtins, Framework, FrameworkError, FrameworkOptions};
 
 type Data = ();
 type Error = Box<dyn std::error::Error + Send + Sync>;
@@ -29,7 +29,12 @@ async fn check(ctx: Context<'_>) -> Result<bool, Error> {
 
 pub async fn start(bot_token: String) {
     let framework = Framework::builder()
-        .setup(|ctx, _, framework| {
+        .setup(|ctx, ready, framework| {
+            info!(
+                "Logged in as: {}. Currently observing {} guild(s)",
+                ready.user.name,
+                ready.guilds.len()
+            );
             Box::pin(async move {
                 builtins::register_globally(&ctx, &framework.options().commands).await?;
                 Ok(())
