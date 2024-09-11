@@ -3,6 +3,7 @@ use crate::{
     db_impl::guilds,
 };
 
+/// Post a confession into the confession channel
 #[poise::command(slash_command, ephemeral, rename = "confess")]
 pub async fn confession(
     ctx: Context<'_>,
