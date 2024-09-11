@@ -1,4 +1,10 @@
-use diesel::prelude::*;
+use diesel::{
+    deserialize::FromSqlRow,
+    prelude::*,
+    sqlite::{sql_types, Sqlite},
+};
+use poise::serenity_prelude as serenity;
+use serde::{Deserialize, Serialize};
 
 #[derive(Queryable, Identifiable, Selectable, Debug, PartialEq)]
 #[diesel(table_name = crate::schema::authors)]
@@ -14,7 +20,15 @@ pub struct NewAuthor {
     pub hash: String,
 }
 
-#[derive(Queryable, Selectable, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, PartialEq, Eq)]
+pub struct GuildConfig {
+    pub delete_vote_min: i32,
+    pub expose_vote_min: i32,
+    pub expose_vote_role: Option<String>,
+    pub role_ping: Option<String>,
+}
+
+#[derive(Queryable, Selectable, Debug, PartialEq, Clone)]
 #[diesel(table_name = crate::schema::guild)]
 #[diesel(check_for_backend(diesel::sqlite::Sqlite))]
 pub struct Guild {

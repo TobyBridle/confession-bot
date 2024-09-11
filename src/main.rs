@@ -3,9 +3,12 @@ use confession_bot_rs::{
     models::{Author, Guild, NewAuthor, NewConfession, NewGuild},
     schema::{authors, confession, guild},
 };
-use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl, SelectableHelper};
+use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl, SelectableHelper, SqliteConnection};
 use log::warn;
-use std::env;
+use std::{
+    env,
+    sync::{Arc, Mutex},
+};
 
 mod client;
 mod commands;
@@ -13,6 +16,7 @@ mod db_impl;
 mod models;
 mod schema;
 
+#[derive(Clone)]
 struct Config {
     db_url: String,
     bot_token: String,
@@ -24,12 +28,11 @@ async fn main() -> Result<(), diesel::result::Error> {
     if dotenvy::dotenv().is_err() {
         warn!("Warning: .env file not found.")
     }
-    let config = Config {
+    let ref config = Config {
         bot_token: env::var("BOT_TOKEN").expect("BOT_TOKEN set"),
         db_url: env::var("DATABASE_URL").expect("DATABASE_URL set"),
     };
-    let mut conn = establish_connection(config.db_url);
-    client::start(config.bot_token).await;
+    client::start(config).await;
     Ok(())
 }
 
