@@ -26,5 +26,17 @@ pub async fn confession(
         guilds::insert_guild(config.db_url.clone(), ctx.guild_id().unwrap().to_string()).await?;
         return Ok(());
     }
+    if guild.unwrap().confession_channel_id.is_none() {
+        ctx.send(
+            CreateReply::new().embed(
+                CreateEmbed::new()
+                    .title("Guild Error")
+                    .description("A confession channel must be set before using `/confess`!\nPlease request a moderator to set one using the `/config` command.")
+                    .color(0xFFAA00)
+            ),
+        )
+        .await?;
+        return Ok(());
+    }
     Ok(())
 }
