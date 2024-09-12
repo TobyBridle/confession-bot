@@ -98,7 +98,7 @@ pub async fn config_guild(
                         .confession_channel_id
                         .clone()
                         .unwrap_or(String::from("Unset")),
-                    guild.confession_channel_id.unwrap().to_string()
+                    channel_id.unwrap().to_string()
                 )
                 .as_str(),
             );
