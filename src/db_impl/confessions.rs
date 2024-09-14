@@ -31,3 +31,19 @@ pub async fn get_confession_by_id(
         Err(e) => return Err(Box::new(e)),
     }
 }
+
+pub async fn get_confession_count(
+    db_url: String,
+    _guild_id: String,
+) -> Result<i64, Box<dyn Error + Send + Sync>> {
+    use self::confession::dsl::*;
+    let mut connection = establish_connection(db_url);
+    let c = confession
+        .inner_join(guild::table)
+        .select(Confession::as_select())
+        .get_results(&mut connection);
+    match c {
+        Ok(c) => Ok(c.len() as i64),
+        Err(e) => Err(Box::new(e)),
+    }
+}
