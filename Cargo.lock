@@ -250,6 +250,7 @@ dependencies = [
  "log",
  "poise",
  "pretty_env_logger",
+ "ring",
  "serde",
  "serde_json",
  "tokio",
