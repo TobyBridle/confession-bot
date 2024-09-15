@@ -1,8 +1,11 @@
-use poise::{serenity_prelude::CreateEmbed, CreateReply};
+use poise::{
+    serenity_prelude::{CreateEmbed, CreateMessage},
+    CreateReply,
+};
 
 use crate::{
     commands::{Context, Error},
-    db_impl::guilds,
+    db_impl::{confessions, guilds},
 };
 
 /// Post a confession into the confession channel
@@ -26,7 +29,8 @@ pub async fn confession(
         guilds::insert_guild(config.db_url.clone(), ctx.guild_id().unwrap().to_string()).await?;
         return Ok(());
     }
-    if guild.unwrap().confession_channel_id.is_none() {
+    let guild = guild.unwrap();
+    if guild.confession_channel_id.is_none() {
         ctx.send(
             CreateReply::new().embed(
                 CreateEmbed::new()
@@ -38,5 +42,50 @@ pub async fn confession(
         .await?;
         return Ok(());
     }
+    let channel = guild.confession_channel_id.unwrap();
+    let ctx_guild = ctx.guild().unwrap().to_owned();
+    let guild_channel = ctx_guild
+        .channels
+        .iter()
+        .find(|c| c.id.to_string() == channel)
+        .cloned();
+    if guild_channel.is_none() {
+        ctx.send(
+            CreateReply::new().embed(
+                CreateEmbed::new()
+                    .color(0xFF0000)
+                    .title("Guild Error")
+                    .description(format!(
+                        "Channel <#{}> does not exist within the current Guild.\nPlease try setting another channel!",
+                        channel
+                    )),
+            ),
+        )
+        .await?;
+    } else {
+        let count = confessions::get_confession_count(
+            config.db_url.clone(),
+            ctx.guild_id().unwrap().to_string(),
+        )
+        .await;
+        if count.is_err() {
+            println!("PLEASEE");
+            return Err(count.err().unwrap());
+        }
+        let count = count.unwrap();
+        guild_channel
+            .unwrap()
+            .send_message(
+                &ctx.http(),
+                CreateMessage::new().embed(
+                    CreateEmbed::new()
+                        .color(0xFF0000)
+                        .title(format!("Confession #{}", count + 1))
+                        .description(content),
+                ),
+            )
+            .await?;
+    }
+
     Ok(())
 }
