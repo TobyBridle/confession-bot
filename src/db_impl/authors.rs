@@ -9,11 +9,11 @@ use crate::schema::authors;
 pub async fn get_author_by_hash(db_url: String, hash: String) -> Result<i32, Box<dyn Error>> {
     let mut connection = establish_connection(db_url);
     match authors::table
-        .select(authors::hash)
+        .select(authors::id)
         .filter(authors::hash.eq(hash))
-        .execute(&mut connection)
+        .first::<i32>(&mut connection)
     {
-        Ok(id) => Ok(id as i32),
+        Ok(id) => Ok(id),
         Err(e) => Err(Box::new(e)),
     }
 }
