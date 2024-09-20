@@ -1,8 +1,5 @@
 use confession_bot_rs::establish_connection;
-use diesel::{
-    associations::HasTable, ExpressionMethods, Insertable, QueryDsl, RunQueryDsl, SelectableHelper,
-    SqliteConnection,
-};
+use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl};
 
 use crate::{
     models::{Guild, GuildConfig},

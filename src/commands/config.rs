@@ -91,6 +91,7 @@ pub async fn config_guild(
         config.db_url.clone(),
         ctx.guild_id().unwrap().to_string(),
         if channel_id.is_some() {
+            // TODO: Check if channel is text based
             changelog.push_str(
                 format!(
                     "Confession Channel ID: {} :arrow_right: {}\n",

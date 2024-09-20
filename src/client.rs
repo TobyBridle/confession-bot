@@ -1,10 +1,7 @@
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
-use confession_bot_rs::establish_connection;
-use diesel::SqliteConnection;
-use log::info;
-use poise::serenity_prelude::{self as serenity, Client, FullEvent, GatewayIntents, Settings};
-use poise::{builtins, Framework, FrameworkOptions};
+use poise::serenity_prelude::{Client, GatewayIntents, Settings};
+use poise::{Framework, FrameworkOptions};
 use tokio::sync::RwLock;
 
 use crate::{commands::*, Config};
@@ -13,7 +10,6 @@ pub async fn start(config: &Config) {
     let framework = Framework::builder()
         // .setup(|ctx, _, framework| {
         //     Box::pin(async move {
-        //         builtins::register_globally(&ctx, &framework.options().commands).await?;
         //         Ok(())
         //     })
         // })

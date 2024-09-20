@@ -1,22 +1,13 @@
-use std::{borrow::BorrowMut, cell::RefCell, ops::Deref, rc::Rc};
-
-use diesel::{Connection, SqliteConnection};
 use log::{error, info};
 use poise::{
     builtins,
-    serenity_prelude::{
-        self as serenity, ButtonStyle, CreateActionRow, CreateButton, CreateEmbed, CreateMessage,
-    },
-    CreateReply, FrameworkError,
+    serenity_prelude::{self as serenity, CreateEmbed, CreateMessage},
+    FrameworkError,
 };
 use serenity::FullEvent;
 use tokio::sync::RwLock;
 
-use crate::{
-    db_impl::{self, guilds},
-    models::GuildConfig,
-    Config,
-};
+use crate::{db_impl::guilds, models::GuildConfig, Config};
 
 pub mod confess;
 pub mod config;
