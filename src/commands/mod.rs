@@ -1,8 +1,7 @@
-use log::{error, info};
 use poise::{
     builtins,
     serenity_prelude::{self as serenity, CreateEmbed, CreateMessage},
-    FrameworkError,
+    FrameworkContext, FrameworkError,
 };
 use serenity::FullEvent;
 use tokio::sync::RwLock;
@@ -19,12 +18,12 @@ pub type Error = Box<dyn std::error::Error + Send + Sync>;
 pub type Context<'a> = poise::Context<'a, Data, Error>;
 
 pub async fn event_handler(
-    framework: poise::FrameworkContext<'_, Data, Error>,
+    framework: FrameworkContext<'_, Data, Error>,
     event: &FullEvent,
 ) -> Result<(), Error> {
     match &event {
         FullEvent::Ready { data_about_bot } => {
-            info!(
+            tracing::info!(
                 "Logged in as: {}. Currently observing {} guild(s)",
                 data_about_bot.user.name,
                 data_about_bot.guilds.len()
@@ -43,7 +42,7 @@ pub async fn event_handler(
             let data = framework.serenity_context.data::<Data>();
             let config = data.config.read().await;
             guilds::insert_guild(config.db_url.clone(), guild.id.to_string()).await?;
-            info!("Joined Guild {}", guild.id)
+            tracing::info!("Joined Guild {}", guild.id)
         }
         FullEvent::Message { new_message } => {
             if new_message.mentions_user_id(framework.bot_id()) {
@@ -57,7 +56,7 @@ pub async fn event_handler(
                 {
                     g
                 } else {
-                    error!(
+                    tracing::error!(
                         "Could not get guild ({}) from DB! Please check that the database exists!",
                         new_message.guild_id.unwrap()
                     );
@@ -104,12 +103,9 @@ pub async fn event_handler(
 pub async fn on_error(err: FrameworkError<'_, Data, Error>) {
     match err {
         FrameworkError::UnknownCommand { framework, msg, .. }
-            if msg.mentions_user_id(framework.bot_id()) =>
-        {
-            return;
-        }
+            if msg.mentions_user_id(framework.bot_id()) => {}
         _ => {
-            error!(
+            tracing::error!(
                 "Error occured ({}): {}",
                 chrono::Local::now(),
                 err.to_string()

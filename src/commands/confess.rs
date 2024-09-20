@@ -1,9 +1,9 @@
-use log::error;
 use poise::{
     serenity_prelude::{CreateEmbed, CreateMessage},
     CreateReply,
 };
 use rand::random;
+use tracing::error;
 
 use crate::db_impl::guilds;
 use crate::{
@@ -22,8 +22,8 @@ pub async fn confession(
     let guild =
         guilds::get_guild(config.db_url.clone(), ctx.guild_id().unwrap().to_string()).await?;
     if guild.is_none() {
-        ctx.send(CreateReply::new().embed(
-            CreateEmbed::new()
+        ctx.send(CreateReply::default().embed(
+            CreateEmbed::default()
                 .color(0xFF0000)
                 .title("Database Error")
                 .description("The current Guild does not exist within the Bot's Database. Please attempt to run the command again.")
@@ -35,8 +35,8 @@ pub async fn confession(
     let guild = guild.unwrap();
     if guild.confession_channel_id.is_none() {
         ctx.send(
-            CreateReply::new().embed(
-                CreateEmbed::new()
+            CreateReply::default().embed(
+                CreateEmbed::default()
                     .title("Guild Error")
                     .description("A confession channel must be set before using `/confess`!\nPlease request a moderator to set one using the `/config` command.")
                     .color(0xFFAA00)
@@ -54,8 +54,8 @@ pub async fn confession(
         .cloned();
     if guild_channel.is_none() {
         ctx.send(
-            CreateReply::new().embed(
-                CreateEmbed::new()
+            CreateReply::default().embed(
+                CreateEmbed::default()
                     .color(0xFF0000)
                     .title("Guild Error")
                     .description(format!(
@@ -79,9 +79,9 @@ pub async fn confession(
         let message = guild_channel
             .unwrap()
             .send_message(
-                &ctx.http(),
-                CreateMessage::new().embed(
-                    CreateEmbed::new()
+                ctx.http(),
+                CreateMessage::default().embed(
+                    CreateEmbed::default()
                         .color(random::<u16>() as u32)
                         .title(format!("Confession #{}", count + 1))
                         .description(content.clone()),
@@ -98,7 +98,7 @@ pub async fn confession(
         .await
         {
             error!("{}", e);
-            return Err(Box::from("Could not insert Confession into DB".to_string()));
+            return Err(Box::from("Could not insert Confession into DB".to_owned()));
         }
         ctx.reply(format!("Posted confession here: {}", message.link()))
             .await?;

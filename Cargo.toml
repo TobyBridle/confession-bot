@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+anyhow = "1"
 chrono = "0.4.38"
 diesel = { version = "2.2.4", features = [
     "sqlite",
@@ -11,11 +12,15 @@ diesel = { version = "2.2.4", features = [
     "returning_clauses_for_sqlite_3_35",
 ] }
 dotenvy = "0.15.7"
-log = "0.4.22"
 poise = { git = "https://github.com/serenity-rs/poise", branch = "serenity-next" }
-pretty_env_logger = "0.5.0"
 rand = "0.8.5"
 ring = "0.17.8"
 serde = { version = "1.0.210", features = ["derive"] }
 serde_json = "1.0.128"
 tokio = { version = "1.40.0", features = ["macros", "rt-multi-thread"] }
+tracing = "0"
+tracing-subscriber = { version = "0" }
+
+[profile.release]
+lto = "thin"
+strip = true

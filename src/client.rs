@@ -1,12 +1,12 @@
-use std::sync::Arc;
-
 use poise::serenity_prelude::{Client, GatewayIntents, Settings};
 use poise::{Framework, FrameworkOptions};
+use std::sync::Arc;
 use tokio::sync::RwLock;
+use tracing::warn;
 
 use crate::{commands::*, Config};
 
-pub async fn start(config: &Config) {
+pub async fn start(config: Config) -> anyhow::Result<()> {
     let framework = Framework::builder()
         // .setup(|ctx, _, framework| {
         //     Box::pin(async move {
@@ -25,14 +25,25 @@ pub async fn start(config: &Config) {
         | GatewayIntents::GUILDS
         | GatewayIntents::MESSAGE_CONTENT;
     let cache_settings = Settings::default();
-    let config = config.clone();
-    let client = Client::builder(config.bot_token.clone().as_str(), intents)
+    let client = Client::builder(config.bot_token.as_str(), intents)
         .framework(framework)
         .cache_settings(cache_settings)
         .data(Arc::new(Data {
             config: RwLock::new(config),
         }))
         .await;
-    // We WANT to crash if something goes wrong.
-    client.unwrap().start().await.unwrap();
+    match client {
+        Ok(mut client) => {
+            if let Err(e) = client.start().await {
+                warn!("Client error: {:?}", e);
+                panic!();
+            }
+        }
+        Err(e) => {
+            warn!("Error creating client: {:?}", e);
+            panic!();
+        }
+    }
+
+    Ok(())
 }

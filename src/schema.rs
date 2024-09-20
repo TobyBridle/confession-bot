@@ -42,9 +42,4 @@ diesel::joinable!(confession -> guild (guild_id));
 diesel::joinable!(delete_votes -> authors (author_id));
 diesel::joinable!(delete_votes -> confession (confession_id));
 
-diesel::allow_tables_to_appear_in_same_query!(
-    authors,
-    confession,
-    delete_votes,
-    guild,
-);
+diesel::allow_tables_to_appear_in_same_query!(authors, confession, delete_votes, guild,);

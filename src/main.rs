@@ -1,6 +1,8 @@
-use log::{error, warn};
+use anyhow::Context;
 use std::env;
 use tokio::fs;
+use tracing::{error, subscriber};
+use tracing_subscriber::FmtSubscriber;
 
 mod client;
 mod commands;
@@ -15,12 +17,11 @@ struct Config {
 }
 
 #[tokio::main]
-async fn main() -> Result<(), diesel::result::Error> {
-    pretty_env_logger::init();
-    if dotenvy::dotenv().is_err() {
-        warn!("Warning: .env file not found.")
-    }
-    let ref config = Config {
+async fn main() -> anyhow::Result<()> {
+    let subscriber = FmtSubscriber::new();
+    subscriber::set_global_default(subscriber)?;
+    dotenvy::dotenv().context("Failed to load .env file")?;
+    let config = Config {
         bot_token: env::var("BOT_TOKEN").expect("BOT_TOKEN set"),
         db_url: env::var("DATABASE_URL").expect("DATABASE_URL set"),
     };
@@ -35,6 +36,6 @@ async fn main() -> Result<(), diesel::result::Error> {
     } else {
         error!("Cannot find file at {}", &config.db_url)
     }
-    client::start(config).await;
+    client::start(config).await?;
     Ok(())
 }

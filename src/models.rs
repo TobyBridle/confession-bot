@@ -1,12 +1,7 @@
-use diesel::{
-    deserialize::FromSqlRow,
-    prelude::*,
-    sqlite::{sql_types, Sqlite},
-};
-use poise::serenity_prelude as serenity;
+use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 
-#[derive(Queryable, Identifiable, Selectable, Debug, PartialEq)]
+#[derive(Queryable, Identifiable, Selectable, PartialEq)]
 #[diesel(table_name = crate::schema::authors)]
 #[diesel(check_for_backend(diesel::sqlite::Sqlite))]
 pub struct Author {
@@ -28,7 +23,7 @@ pub struct GuildConfig {
     pub role_ping: Option<String>,
 }
 
-#[derive(Queryable, Selectable, Debug, PartialEq, Clone)]
+#[derive(Queryable, Selectable, PartialEq, Clone)]
 #[diesel(table_name = crate::schema::guild)]
 #[diesel(check_for_backend(diesel::sqlite::Sqlite))]
 pub struct Guild {
@@ -45,7 +40,7 @@ pub struct NewGuild {
     pub config: String,
 }
 
-#[derive(Queryable, Associations, Selectable, Debug, PartialEq, Clone)]
+#[derive(Queryable, Associations, Selectable, PartialEq, Clone)]
 #[diesel(belongs_to(Author, foreign_key = author))]
 #[diesel(table_name = crate::schema::confession)]
 #[diesel(check_for_backend(diesel::sqlite::Sqlite))]
@@ -67,7 +62,7 @@ pub struct NewConfession<'a> {
     pub author: i32,
 }
 
-#[derive(Queryable, Selectable, Associations, Debug, PartialEq)]
+#[derive(Queryable, Selectable, Associations, PartialEq)]
 #[diesel(belongs_to(Author, foreign_key=author_id))]
 #[diesel(belongs_to(Confession, foreign_key=confession_id))]
 #[diesel(table_name = crate::schema::delete_votes)]

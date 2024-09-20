@@ -28,8 +28,8 @@ pub async fn get_confession_by_id(
         .select(Confession::as_select())
         .get_result(&mut connection)
     {
-        Ok(c) => return Ok(c.clone()),
-        Err(e) => return Err(Box::new(e)),
+        Ok(c) => Ok(c.clone()),
+        Err(e) => Err(Box::new(e)),
     }
 }
 

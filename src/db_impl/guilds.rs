@@ -1,5 +1,5 @@
 use confession_bot_rs::establish_connection;
-use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl};
+use diesel::{ExpressionMethods, OptionalExtension, QueryDsl, RunQueryDsl};
 
 use crate::{
     models::{Guild, GuildConfig},
@@ -14,16 +14,10 @@ pub async fn get_guild(
     guild_id: String,
 ) -> Result<Option<Guild>, diesel::result::Error> {
     let mut conn = establish_connection(db_url);
-    let res: Result<Vec<Guild>, diesel::result::Error> = guild::table
-        .limit(1)
+    guild::table
         .filter(guild::guild_id.eq(guild_id))
-        .load(&mut conn);
-
-    if res.is_err() {
-        return Err(res.unwrap_err());
-    }
-
-    Ok(res.unwrap().first().cloned())
+        .first(&mut conn)
+        .optional()
 }
 
 pub async fn insert_guild(db_url: String, guild_id: String) -> Result<(), diesel::result::Error> {

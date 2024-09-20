@@ -1,5 +1,5 @@
 use poise::{
-    serenity_prelude::{ChannelId, CreateEmbed, Mention, RoleId},
+    serenity_prelude::{ChannelId, CreateEmbed, RoleId},
     CreateReply,
 };
 
@@ -66,7 +66,7 @@ pub async fn config_guild(
                     .expose_vote_role
                     .clone()
                     .unwrap_or(String::from("Unset")),
-                expose_vote_role.unwrap().to_string()
+                expose_vote_role.unwrap()
             )
             .as_str(),
         );
@@ -80,7 +80,7 @@ pub async fn config_guild(
                     .role_ping
                     .clone()
                     .unwrap_or(String::from("Unset")),
-                role_ping.unwrap().to_string()
+                role_ping.unwrap()
             )
             .as_str(),
         );
@@ -99,7 +99,7 @@ pub async fn config_guild(
                         .confession_channel_id
                         .clone()
                         .unwrap_or(String::from("Unset")),
-                    channel_id.unwrap().to_string()
+                    channel_id.unwrap()
                 )
                 .as_str(),
             );

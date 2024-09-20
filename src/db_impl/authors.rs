@@ -21,7 +21,7 @@ pub async fn get_author_by_hash(db_url: String, hash: String) -> Result<i32, Box
 pub async fn insert_author(db_url: String, author_id: String) -> Result<i32, Box<dyn Error>> {
     let mut connection = establish_connection(db_url.clone());
     let mut context = Context::new(&SHA256);
-    context.update(&author_id.as_bytes());
+    context.update(author_id.as_bytes());
     let hash = format!("{:X?}", context.finish());
 
     match diesel::insert_into(authors::table)
