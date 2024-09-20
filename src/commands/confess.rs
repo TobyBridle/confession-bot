@@ -99,6 +99,8 @@ pub async fn confession(
             error!("{}", e);
             return Err(Box::from("Could not insert Confession into DB".to_string()));
         }
+        ctx.reply(format!("Posted confession here: {}", message.link()))
+            .await?;
     }
 
     Ok(())
