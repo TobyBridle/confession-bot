@@ -36,7 +36,7 @@ pub async fn event_handler(
             .await?;
         }
         FullEvent::GuildCreate { guild, is_new } => {
-            if is_new == &Some(false) {
+            if is_new == &Some(false) || is_new.is_none() {
                 return Ok(());
             };
 
