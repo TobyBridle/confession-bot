@@ -3,6 +3,7 @@ use poise::{
     serenity_prelude::{CreateEmbed, CreateMessage},
     CreateReply,
 };
+use rand::random;
 
 use crate::db_impl::guilds;
 use crate::{
@@ -81,7 +82,7 @@ pub async fn confession(
                 &ctx.http(),
                 CreateMessage::new().embed(
                     CreateEmbed::new()
-                        .color(0xFF0000)
+                        .color(random::<u16>() as u32)
                         .title(format!("Confession #{}", count + 1))
                         .description(content.clone()),
                 ),
