@@ -49,12 +49,20 @@ pub async fn event_handler(
             if new_message.mentions_user_id(framework.bot_id()) {
                 let data = framework.serenity_context.data::<Data>();
                 let config = data.config.read().await;
-                let guild = guilds::get_guild(
+                let guild = if let Some(g) = guilds::get_guild(
                     config.db_url.clone(),
                     new_message.guild_id.unwrap().to_string(),
                 )
                 .await?
-                .unwrap();
+                {
+                    g
+                } else {
+                    error!(
+                        "Could not get guild ({}) from DB! Please check that the database exists!",
+                        new_message.guild_id.unwrap()
+                    );
+                    return Err(Box::from("Guild not found".to_string()));
+                };
                 let config: GuildConfig = serde_json::from_str(&guild.config).unwrap();
                 let embed = CreateEmbed::new()
                     .title("Guild Configuration")
