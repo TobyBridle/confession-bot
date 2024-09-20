@@ -1,5 +1,6 @@
-use log::warn;
+use log::{error, warn};
 use std::env;
+use tokio::fs;
 
 mod client;
 mod commands;
@@ -23,6 +24,17 @@ async fn main() -> Result<(), diesel::result::Error> {
         bot_token: env::var("BOT_TOKEN").expect("BOT_TOKEN set"),
         db_url: env::var("DATABASE_URL").expect("DATABASE_URL set"),
     };
+    if let Ok(meta) = fs::metadata(&config.db_url).await {
+        if !meta.is_file() && !meta.is_symlink() {
+            error!(
+                "Expected file at {}. Found {:?}",
+                &config.db_url,
+                meta.file_type()
+            )
+        }
+    } else {
+        error!("Cannot find file at {}", &config.db_url)
+    }
     client::start(config).await;
     Ok(())
 }
