@@ -1,11 +1,13 @@
+use log::error;
 use poise::{
     serenity_prelude::{CreateEmbed, CreateMessage},
     CreateReply,
 };
 
+use crate::db_impl::guilds;
 use crate::{
     commands::{Context, Error},
-    db_impl::{confessions, guilds},
+    db_impl::confessions::{self, insert_confession},
 };
 
 /// Post a confession into the confession channel
@@ -73,7 +75,7 @@ pub async fn confession(
             return Err(count.err().unwrap());
         }
         let count = count.unwrap();
-        guild_channel
+        let message = guild_channel
             .unwrap()
             .send_message(
                 &ctx.http(),
@@ -81,10 +83,22 @@ pub async fn confession(
                     CreateEmbed::new()
                         .color(0xFF0000)
                         .title(format!("Confession #{}", count + 1))
-                        .description(content),
+                        .description(content.clone()),
                 ),
             )
             .await?;
+        if let Err(e) = insert_confession(
+            config.db_url.clone(),
+            message.id.to_string(),
+            ctx.author().id.to_string(),
+            ctx.guild_id().unwrap().to_string(),
+            content,
+        )
+        .await
+        {
+            error!("{}", e);
+            return Err(Box::from("Could not insert Confession into DB".to_string()));
+        }
     }
 
     Ok(())
