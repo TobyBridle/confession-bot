@@ -30,6 +30,8 @@ pub async fn insert_guild(db_url: String, guild_id: String) -> Result<(), result
         Ok(default_config_string) => {
             diesel::insert_into(guild::table)
                 .values((guildId.eq(guild_id), guildConfig.eq(default_config_string)))
+                .on_conflict(guild::guild_id)
+                .do_nothing()
                 .execute(&mut conn)?;
         }
         Err(e) => {

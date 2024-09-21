@@ -35,8 +35,11 @@ pub async fn event_handler(
             )
             .await?;
         }
-        FullEvent::GuildCreate { guild, is_new } => {
-            if is_new.is_some() {
+        FullEvent::GuildCreate {
+            guild,
+            is_new: Some(new_guild),
+        } => {
+            if *new_guild {
                 let data = framework.serenity_context.data::<Data>();
                 let config = data.config.read().await;
                 guilds::insert_guild(config.db_url.clone(), guild.id.to_string()).await?;
