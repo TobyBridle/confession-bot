@@ -8,11 +8,6 @@ use crate::{commands::*, Config};
 
 pub async fn start(config: Config) -> anyhow::Result<()> {
     let framework = Framework::builder()
-        // .setup(|ctx, _, framework| {
-        //     Box::pin(async move {
-        //         Ok(())
-        //     })
-        // })
         .options(FrameworkOptions {
             commands: vec![confess::confession(), config::config_guild()],
             event_handler: |ctx, event| Box::pin(event_handler(ctx, event)),

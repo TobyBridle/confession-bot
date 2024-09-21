@@ -1,5 +1,6 @@
 use confession_bot_rs::establish_connection;
-use diesel::{ExpressionMethods, OptionalExtension, QueryDsl, RunQueryDsl};
+use diesel::{result, ExpressionMethods, OptionalExtension, QueryDsl, RunQueryDsl};
+use tracing::warn;
 
 use crate::{
     models::{Guild, GuildConfig},
@@ -9,10 +10,7 @@ use crate::{
     },
 };
 
-pub async fn get_guild(
-    db_url: String,
-    guild_id: String,
-) -> Result<Option<Guild>, diesel::result::Error> {
+pub async fn get_guild(db_url: String, guild_id: String) -> Result<Option<Guild>, result::Error> {
     let mut conn = establish_connection(db_url);
     guild::table
         .filter(guild::guild_id.eq(guild_id))
@@ -20,7 +18,7 @@ pub async fn get_guild(
         .optional()
 }
 
-pub async fn insert_guild(db_url: String, guild_id: String) -> Result<(), diesel::result::Error> {
+pub async fn insert_guild(db_url: String, guild_id: String) -> Result<(), result::Error> {
     let mut conn = establish_connection(db_url);
     let default_config = GuildConfig {
         delete_vote_min: 10,
@@ -28,12 +26,16 @@ pub async fn insert_guild(db_url: String, guild_id: String) -> Result<(), diesel
         expose_vote_role: None,
         role_ping: None,
     };
-    diesel::insert_into(guild::table)
-        .values((
-            guildId.eq(guild_id),
-            guildConfig.eq(serde_json::to_string(&default_config).unwrap()),
-        ))
-        .execute(&mut conn)?;
+    match serde_json::to_string(&default_config) {
+        Ok(default_config_string) => {
+            diesel::insert_into(guild::table)
+                .values((guildId.eq(guild_id), guildConfig.eq(default_config_string)))
+                .execute(&mut conn)?;
+        }
+        Err(e) => {
+            warn!("Default guild config not accessible: {}", e)
+        }
+    }
     Ok(())
 }
 
@@ -42,13 +44,20 @@ pub async fn update_guild(
     guild_id: String,
     confession_channel_id: Option<String>,
     config: GuildConfig,
-) -> Result<(), diesel::result::Error> {
+) -> Result<(), result::Error> {
     let mut conn = establish_connection(db_url);
-    diesel::update(guild::table.filter(guildId.eq(guild_id)))
-        .set((
-            guildConfig.eq(serde_json::to_string(&config).unwrap()),
-            guildConfessionChannel.eq(confession_channel_id),
-        ))
-        .execute(&mut conn)?;
+    match serde_json::to_string(&config) {
+        Ok(config_string) => {
+            diesel::update(guild::table.filter(guildId.eq(guild_id)))
+                .set((
+                    guildConfig.eq(config_string),
+                    guildConfessionChannel.eq(confession_channel_id),
+                ))
+                .execute(&mut conn)?;
+        }
+        Err(e) => {
+            warn!("Guild config not accessible: {}", e)
+        }
+    }
     Ok(())
 }

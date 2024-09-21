@@ -22,8 +22,8 @@ async fn main() -> anyhow::Result<()> {
     subscriber::set_global_default(subscriber)?;
     dotenvy::dotenv().context("Failed to load .env file")?;
     let config = Config {
-        bot_token: env::var("BOT_TOKEN").expect("BOT_TOKEN set"),
-        db_url: env::var("DATABASE_URL").expect("DATABASE_URL set"),
+        bot_token: env::var("BOT_TOKEN").context("BOT_TOKEN not set")?,
+        db_url: env::var("DATABASE_URL").context("DATABASE_URL not set")?,
     };
     if let Ok(meta) = fs::metadata(&config.db_url).await {
         if !meta.is_file() && !meta.is_symlink() {
