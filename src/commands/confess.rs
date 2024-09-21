@@ -86,7 +86,7 @@ pub async fn confession(
         }
     };
 
-    let message = guild_channel
+    let message_res = guild_channel
         .send_message(
             ctx.http(),
             CreateMessage::default().embed(
@@ -96,23 +96,36 @@ pub async fn confession(
                     .description(content.clone()),
             ),
         )
-        .await?;
+        .await;
 
-    if let Err(e) = insert_confession(
-        config.db_url.clone(),
-        message.id.to_string(),
-        ctx.author().id.to_string(),
-        guild_id.to_string(),
-        content,
-    )
-    .await
-    {
-        error!("{}", e);
-        return Err(Box::from("Could not insert Confession into DB".to_owned()));
+    match message_res {
+        Ok(message) => {
+            if let Err(e) = insert_confession(
+                config.db_url.clone(),
+                message.id.to_string(),
+                ctx.author().id.to_string(),
+                guild_id.to_string(),
+                content,
+            )
+            .await
+            {
+                // TODO: Delete the confession as we are unable to moderate and accept votes
+                // if it is not within the DB
+                error!("{}", e);
+                return Err(Box::from("Could not insert Confession into DB".to_owned()));
+            }
+
+            ctx.reply(format!("Posted confession here: {}", message.link()))
+                .await?;
+        }
+        Err(e) => {
+            error!("Could not post confession: {}", e);
+            return Err(Box::from(format!(
+                "Could not send confession. Reason: {}",
+                e.to_string()
+            )));
+        }
     }
-
-    ctx.reply(format!("Posted confession here: {}", message.link()))
-        .await?;
 
     Ok(())
 }
