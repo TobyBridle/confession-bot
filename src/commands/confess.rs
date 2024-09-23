@@ -1,5 +1,10 @@
+use std::str::FromStr;
+
 use poise::{
-    serenity_prelude::{Channel, ChannelId, CreateEmbed, CreateMessage},
+    serenity_prelude::{
+        ButtonStyle, Channel, ChannelId, CreateActionRow, CreateButton, CreateEmbed, CreateMessage,
+        EmojiIdentifier, ReactionType,
+    },
     CreateReply,
 };
 use rand::random;
@@ -89,12 +94,22 @@ pub async fn confession(
     let message_res = guild_channel
         .send_message(
             ctx.http(),
-            CreateMessage::default().embed(
-                CreateEmbed::default()
-                    .color(random::<u16>() as u32)
-                    .title(format!("Confession #{}", count + 1))
-                    .description(content.clone()),
-            ),
+            CreateMessage::default()
+                .embed(
+                    CreateEmbed::default()
+                        .color(random::<u16>() as u32)
+                        .title(format!("Confession #{}", count + 1))
+                        .description(content.clone()),
+                )
+                .components(&[CreateActionRow::Buttons(vec![
+                    CreateButton::new("delete_id")
+                        .emoji(ReactionType::from_str("🗑")?)
+                        .style(ButtonStyle::Danger)
+                        .label("Delete"),
+                    CreateButton::new("expose_id")
+                        .emoji(ReactionType::from_str("🕵️")?)
+                        .label("Expose"),
+                ])]),
         )
         .await;
 

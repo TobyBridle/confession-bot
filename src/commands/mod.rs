@@ -23,6 +23,14 @@ pub async fn event_handler(
     event: &FullEvent,
 ) -> Result<(), Error> {
     match &event {
+        FullEvent::InteractionCreate { interaction } => {
+            if let Some(cmp) = interaction.as_message_component() {
+                println!(
+                    "We got this interaction (we dont handle it): {:?}",
+                    cmp.data.custom_id
+                );
+            }
+        }
         FullEvent::Ready { data_about_bot } => {
             info!(
                 "Logged in as: {}. Currently observing {} guild(s)",
