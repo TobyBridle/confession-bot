@@ -1,9 +1,10 @@
 use std::str::FromStr;
 
+use confession_bot_rs::{DELETE_VOTE_STR, EXPOSE_VOTE_STR};
 use poise::{
     serenity_prelude::{
         ButtonStyle, Channel, ChannelId, CreateActionRow, CreateButton, CreateEmbed, CreateMessage,
-        EmojiIdentifier, ReactionType,
+        ReactionType,
     },
     CreateReply,
 };
@@ -14,6 +15,7 @@ use crate::db_impl::guilds;
 use crate::{
     commands::{Context, Error},
     db_impl::confessions::{self, insert_confession},
+    models::GuildConfig,
 };
 
 /// Post a confession into the confession channel
@@ -40,6 +42,8 @@ pub async fn confession(
             return Ok(());
         }
     };
+
+    let guild_config: GuildConfig = serde_json::from_str(guild.config.as_str()).unwrap();
 
     let channel_id = match guild.confession_channel_id {
         Some(id) => id,
@@ -102,13 +106,13 @@ pub async fn confession(
                         .description(content.clone()),
                 )
                 .components(&[CreateActionRow::Buttons(vec![
-                    CreateButton::new("delete_id")
+                    CreateButton::new(DELETE_VOTE_STR)
                         .emoji(ReactionType::from_str("🗑")?)
                         .style(ButtonStyle::Danger)
-                        .label("Delete"),
-                    CreateButton::new("expose_id")
+                        .label(format!("Delete (0/{})", guild_config.delete_vote_min)),
+                    CreateButton::new(EXPOSE_VOTE_STR)
                         .emoji(ReactionType::from_str("🕵️")?)
-                        .label("Expose"),
+                        .label(format!("Expose (0/{})", guild_config.expose_vote_min)),
                 ])]),
         )
         .await;
