@@ -43,7 +43,16 @@ pub async fn confession(
         }
     };
 
-    let guild_config: GuildConfig = serde_json::from_str(guild.config.as_str()).unwrap();
+    let guild_config = match serde_json::from_str::<GuildConfig>(guild.config.as_str()) {
+        Ok(cfg) => cfg,
+        Err(e) => {
+            error!(
+                "Could not convert {} to guild config. Reason: {:?}",
+                guild.config, e
+            );
+            return Err(Box::from(e));
+        }
+    };
 
     let channel_id = match guild.confession_channel_id {
         Some(id) => id,
