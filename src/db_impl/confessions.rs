@@ -16,7 +16,7 @@ pub async fn get_confession_by_id(
     db_url: String,
     message_id: String,
     _guild_id: String,
-) -> Result<Confession, Box<dyn Error>> {
+) -> Result<Confession, Box<dyn Error + Send + Sync>> {
     let mut connection = establish_connection(db_url);
     match guild::table
         .inner_join(confession::table)
@@ -55,7 +55,7 @@ pub async fn insert_confession(
     _author_id: String,
     _guild_id: String,
     content: String,
-) -> Result<(), Box<dyn Error>> {
+) -> Result<(), Box<dyn Error + Send + Sync>> {
     let author_id = insert_author(db_url.clone(), _author_id).await?;
     let mut conn = establish_connection(db_url);
     match diesel::insert_into(confession::table)
