@@ -19,10 +19,10 @@ use super::authors::insert_author;
 ///
 /// 1 -> The amount of votes required for deletion/exposing
 pub async fn update_vote(
-    db_url: String,
-    author_id: String,
-    message_id: String,
-    guild_id: String,
+    db_url: &String,
+    author_id: &String,
+    message_id: &String,
+    guild_id: &String,
     vote_type: VoteType,
 ) -> Result<(u32, u32), Box<dyn Error + Send + Sync>> {
     let mut context = Context::new(&SHA256);
@@ -56,10 +56,11 @@ pub async fn update_vote(
 
     let mut connection = establish_connection(db_url.clone());
 
-    let confession = get_confession_by_id(db_url.clone(), message_id, guild_id).await?;
+    let confession =
+        get_confession_by_id(db_url.clone(), message_id.clone(), guild_id.clone()).await?;
 
     // Insert (or, if conflicting, get) the author for the hashed user ID
-    let author = insert_author(db_url, hash).await?;
+    let author = insert_author(db_url.clone(), hash).await?;
 
     let total_votes = match delete_votes::table
         .filter(

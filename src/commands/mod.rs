@@ -1,20 +1,26 @@
 use std::{str::FromStr, sync::Arc};
 
-use confession_bot_rs::{VoteType, DELETE_VOTE_STR};
+use confession_bot_rs::{VoteType, DELETE_VOTE_STR, EXPOSE_VOTE_STR};
 use poise::{
     builtins,
     serenity_prelude::{
         self as serenity, ActionRowComponent, ButtonStyle, CreateActionRow, CreateButton,
-        CreateEmbed, CreateMessage, EditMessage, ReactionType,
+        CreateEmbed, CreateEmbedFooter, CreateMessage, EditMessage, GuildId, ReactionType, RoleId,
+        UserId,
     },
     FrameworkContext, FrameworkError,
 };
+use ring::digest::SHA256;
 use serenity::FullEvent;
 use tokio::sync::RwLock;
 use tracing::{error, info};
 
 use crate::{
-    db_impl::{guilds, votes::update_vote},
+    db_impl::{
+        authors::get_author_hash_by_message,
+        guilds::{self, get_guild_config},
+        votes::update_vote,
+    },
     models::GuildConfig,
     Config,
 };
@@ -44,17 +50,24 @@ pub async fn event_handler(
                 if let Err(e) = guild_id {
                     return Err(Box::from(e.to_string()));
                 }
-                let guild_id = guild_id.unwrap().to_string();
+                let guild_id = match guild_id {
+                    Ok(id) => id.to_string(),
+                    Err(e) => {
+                        error!("Could not get guild id. Reason: {:?}", e);
+                        return Err(Box::from(e));
+                    }
+                };
 
                 let data: Arc<Data> = framework.serenity_context.data();
                 let config = data.config.read().await;
+                let guild_config = get_guild_config(&config.db_url, &guild_id).await?;
 
                 if reaction_type == VoteType::DELETE {
                     let updated = update_vote(
-                        config.db_url.clone(),
-                        author_id,
-                        message_id,
-                        guild_id,
+                        &config.db_url,
+                        &author_id,
+                        &message_id,
+                        &guild_id,
                         reaction_type,
                     )
                     .await?;
@@ -109,7 +122,118 @@ pub async fn event_handler(
                         .edit(&framework.serenity_context.http, updated_message)
                         .await?;
                 } else {
-                    panic!("Not Implemented Reaction type for Expose")
+                    if let Some(minimum_role) = guild_config.expose_vote_role {
+                        if !cmp
+                            .user
+                            .has_role(
+                                &framework.serenity_context.http,
+                                cmp.guild_id.unwrap_or(GuildId::default()),
+                                RoleId::from_str(&minimum_role)?,
+                            )
+                            .await?
+                        {
+                            return Ok(());
+                        }
+                    }
+                    let updated = update_vote(
+                        &config.db_url,
+                        &author_id,
+                        &message_id,
+                        &guild_id,
+                        reaction_type,
+                    )
+                    .await?;
+
+                    let updated_message = if updated.0 == updated.1 {
+                        // Attempt to find the author
+                        let guild = framework
+                            .serenity_context
+                            .http
+                            .get_guild(cmp.guild_id.unwrap())
+                            .await?;
+                        let author_hash = get_author_hash_by_message(
+                            config.db_url.clone(),
+                            cmp.message.id.to_string(),
+                            guild_id,
+                        )
+                        .await?;
+                        let mut first_author_id: Option<UserId> = None;
+                        let mut last_user_id: Option<UserId> = None;
+
+                        let mut author =
+                            "Unknown (Author may no longer be within the Guild)".to_string();
+
+                        for _ in (0..250_000).skip(1000) {
+                            let members = guild
+                                .members(&framework.serenity_context.http, None, last_user_id)
+                                .await?;
+
+                            if let Some(member) = members.first() {
+                                if Some(member.user.id) == first_author_id {
+                                    break;
+                                }
+                                if first_author_id.is_none() {
+                                    first_author_id = Some(member.user.id);
+                                }
+                            }
+
+                            let found = members.iter().enumerate().find(|(i, m)| {
+                                let mut context = ring::digest::Context::new(&SHA256);
+                                context.update(m.user.id.to_string().as_bytes());
+
+                                let hash = format!("{:X?}", context.finish());
+
+                                if i % 1000 == 0 {
+                                    last_user_id = Some(m.user.id)
+                                } else if *i == members.len() - 1 {
+                                    last_user_id = None;
+                                }
+
+                                return hash == author_hash;
+                            });
+
+                            if let Some(f) = found {
+                                author = format!(
+                                    "{} - ({})",
+                                    f.1.user.display_name(),
+                                    f.1.user.id.to_string()
+                                );
+                                break;
+                            }
+                        }
+                        EditMessage::new()
+                            .embed(
+                                CreateEmbed::from(cmp.message.embeds.first().unwrap().clone())
+                                    .footer(CreateEmbedFooter::new(format!("Author: {}", author))),
+                            )
+                            .components(vec![])
+                    } else {
+                        let action_row = match cmp.message.components.first() {
+                            Some(c) => c,
+                            None => {
+                                return Err(Box::from("Could not get components from message."))
+                            }
+                        };
+
+                        let delete = match action_row.components.iter().nth(0) {
+                            Some(ActionRowComponent::Button(b)) => b,
+                            e => {
+                                panic!("Did not find the right component! Got: {:?}", e)
+                            }
+                        };
+                        let components = CreateActionRow::Buttons(vec![
+                            delete.clone().into(),
+                            CreateButton::new(EXPOSE_VOTE_STR)
+                                .emoji(ReactionType::from_str("🕵️")?)
+                                .label(format!("Expose ({}/{})", updated.0, updated.1)),
+                        ]);
+                        EditMessage::new().components(vec![components])
+                    };
+
+                    cmp.message
+                        .clone()
+                        .edit(&framework.serenity_context.http, updated_message)
+                        .await?;
                 }
             }
         }
