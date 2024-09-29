@@ -1,3 +1,5 @@
+use std::error::Error;
+
 use confession_bot_rs::establish_connection;
 use diesel::{result, ExpressionMethods, OptionalExtension, QueryDsl, RunQueryDsl};
 use tracing::warn;
@@ -16,6 +18,21 @@ pub async fn get_guild(db_url: String, guild_id: String) -> Result<Option<Guild>
         .filter(guild::guild_id.eq(guild_id))
         .first(&mut conn)
         .optional()
+}
+
+pub async fn get_guild_config(
+    db_url: &String,
+    guild_id: &String,
+) -> Result<GuildConfig, Box<dyn Error + Send + Sync>> {
+    let mut conn = establish_connection(db_url.clone());
+    match guild::table
+        .select(guild::config)
+        .filter(guild::guild_id.eq(guild_id))
+        .first::<String>(&mut conn)
+    {
+        Ok(cfg) => Ok(serde_json::from_str::<GuildConfig>(cfg.as_str())?),
+        Err(e) => Err(Box::from(e)),
+    }
 }
 
 pub async fn insert_guild(db_url: String, guild_id: String) -> Result<(), result::Error> {
