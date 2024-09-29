@@ -14,7 +14,7 @@ use tokio::sync::RwLock;
 use tracing::{error, info};
 
 use crate::{
-    db_impl::{guilds, votes::update_delete_vote},
+    db_impl::{guilds, votes::update_vote},
     models::GuildConfig,
     Config,
 };
@@ -50,9 +50,14 @@ pub async fn event_handler(
                 let config = data.config.read().await;
 
                 if reaction_type == VoteType::DELETE {
-                    let updated =
-                        update_delete_vote(config.db_url.clone(), author_id, message_id, guild_id)
-                            .await?;
+                    let updated = update_vote(
+                        config.db_url.clone(),
+                        author_id,
+                        message_id,
+                        guild_id,
+                        reaction_type,
+                    )
+                    .await?;
 
                     let updated_message = if updated.0 == updated.1 {
                         EditMessage::new()

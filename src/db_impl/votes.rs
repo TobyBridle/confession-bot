@@ -1,8 +1,8 @@
 use std::error::Error;
 
 use crate::models::{GuildConfig, Vote};
-use confession_bot_rs::{establish_connection, schema::delete_votes, DELETE_VOTE_STR};
-use diesel::{BoolExpressionMethods, ExpressionMethods, QueryDsl, RunQueryDsl};
+use confession_bot_rs::{establish_connection, schema::delete_votes, VoteType, DELETE_VOTE_STR};
+use diesel::{BoolExpressionMethods, ExpressionMethods, IntoSql, QueryDsl, RunQueryDsl};
 use ring::digest::{Context, SHA256};
 use tracing::error;
 
@@ -17,12 +17,13 @@ use super::authors::insert_author;
 ///
 /// 0 -> The updated amount of votes
 ///
-/// 1 -> The amount of votes required for deletion
-pub async fn update_delete_vote(
+/// 1 -> The amount of votes required for deletion/exposing
+pub async fn update_vote(
     db_url: String,
     author_id: String,
     message_id: String,
     guild_id: String,
+    vote_type: VoteType,
 ) -> Result<(u32, u32), Box<dyn Error + Send + Sync>> {
     let mut context = Context::new(&SHA256);
     context.update(author_id.as_bytes());
@@ -46,6 +47,13 @@ pub async fn update_delete_vote(
         }
     };
 
+    let min_vote = match vote_type {
+        VoteType::DELETE => config.delete_vote_min,
+        VoteType::EXPOSE => config.expose_vote_min,
+    } as u32;
+
+    let vote_type_str: String = vote_type.into();
+
     let mut connection = establish_connection(db_url.clone());
 
     let confession = get_confession_by_id(db_url.clone(), message_id, guild_id).await?;
@@ -57,7 +65,7 @@ pub async fn update_delete_vote(
         .filter(
             delete_votes::confession_id
                 .eq(confession.id)
-                .and(delete_votes::vote_type.eq(DELETE_VOTE_STR)),
+                .and(delete_votes::vote_type.eq(&vote_type_str)),
         )
         .count()
         .get_result::<i64>(&mut connection)
@@ -68,12 +76,13 @@ pub async fn update_delete_vote(
         }
     };
 
+    // User has already made a vote, so we will remove it
     if let Ok(_) = delete_votes::table
         .filter(
             delete_votes::confession_id
                 .eq(confession.id)
                 .and(delete_votes::author_id.eq(author))
-                .and(delete_votes::vote_type.eq(DELETE_VOTE_STR)),
+                .and(delete_votes::vote_type.eq(&vote_type_str)),
         )
         .select(delete_votes::id)
         .first::<i32>(&mut connection)
@@ -84,33 +93,33 @@ pub async fn update_delete_vote(
                 delete_votes::confession_id
                     .eq(confession.id)
                     .and(delete_votes::author_id.eq(author))
-                    .and(delete_votes::vote_type.eq(DELETE_VOTE_STR)),
+                    .and(delete_votes::vote_type.eq(&vote_type_str)),
             )
             .execute(&mut connection)?;
-        return Ok((total_votes - 1, config.delete_vote_min as u32));
+        return Ok((total_votes - 1, min_vote));
     }
 
-    if total_votes + 1 == config.delete_vote_min as u32 {
+    if total_votes + 1 == min_vote {
         diesel::delete(delete_votes::table)
             .filter(
                 delete_votes::confession_id
                     .eq(confession.id)
-                    .and(delete_votes::vote_type.eq(DELETE_VOTE_STR)),
+                    .and(delete_votes::vote_type.eq(vote_type_str)),
             )
             .execute(&mut connection)?;
-        return Ok((config.delete_vote_min as u32, config.delete_vote_min as u32));
+        return Ok((min_vote, min_vote));
     }
 
     match diesel::insert_into(delete_votes::table)
         .values((
             delete_votes::confession_id.eq(confession.id),
             delete_votes::author_id.eq(author),
-            delete_votes::vote_type.eq(DELETE_VOTE_STR),
+            delete_votes::vote_type.eq(vote_type_str),
         ))
         .get_result::<Vote>(&mut connection)
     {
         Ok(_) => {
-            return Ok((total_votes + 1, config.delete_vote_min as u32));
+            return Ok((total_votes + 1, min_vote));
         }
         Err(e) => return Err(Box::from(e)),
     }
