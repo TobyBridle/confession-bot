@@ -1,10 +1,11 @@
 use std::error::Error;
 
 use confession_bot_rs::establish_connection;
-use diesel::{ExpressionMethods, OptionalExtension, QueryDsl, RunQueryDsl};
+use diesel::{BoolExpressionMethods, ExpressionMethods, OptionalExtension, QueryDsl, RunQueryDsl};
 use ring::digest::{Context, SHA256};
+use tracing::error;
 
-use crate::schema::authors;
+use crate::schema::{authors, confession};
 
 pub async fn get_author_by_hash(
     db_url: String,
@@ -17,6 +18,41 @@ pub async fn get_author_by_hash(
         .first::<i32>(&mut connection)
     {
         Ok(id) => Ok(id),
+        Err(e) => Err(Box::new(e)),
+    }
+}
+
+pub async fn get_author_hash_by_message(
+    db_url: String,
+    message_id: String,
+    guild_id: String,
+) -> Result<String, Box<dyn Error + Send + Sync>> {
+    let mut connection = establish_connection(db_url);
+    let author_id = match confession::table
+        .select(confession::author)
+        .filter(
+            confession::message_id
+                .eq(&message_id)
+                .and(confession::guild_id.eq(&guild_id)),
+        )
+        .first::<i32>(&mut connection)
+    {
+        Ok(id) => id,
+        Err(e) => {
+            error!(
+                "Could not find author id in DB using {} and {}",
+                &message_id, &guild_id
+            );
+            return Err(Box::from(e));
+        }
+    };
+
+    match authors::table
+        .select(authors::hash)
+        .filter(authors::id.eq(author_id))
+        .first::<String>(&mut connection)
+    {
+        Ok(hash) => Ok(hash),
         Err(e) => Err(Box::new(e)),
     }
 }
