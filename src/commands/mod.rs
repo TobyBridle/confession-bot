@@ -204,6 +204,17 @@ pub async fn event_handler(
                         EditMessage::new()
                             .embed(
                                 CreateEmbed::from(cmp.message.embeds.first().unwrap().clone())
+                                    .title(format!(
+                                        "Exposed {}",
+                                        cmp.message
+                                            .embeds
+                                            .first()
+                                            .unwrap()
+                                            .title
+                                            .as_ref()
+                                            .unwrap()
+                                            .to_string()
+                                    ))
                                     .footer(CreateEmbedFooter::new(format!("Author: {}", author))),
                             )
                             .components(vec![])
