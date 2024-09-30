@@ -20,7 +20,7 @@ struct Config {
 async fn main() -> anyhow::Result<()> {
     let subscriber = FmtSubscriber::new();
     subscriber::set_global_default(subscriber)?;
-    dotenvy::dotenv().context("Failed to load .env file")?;
+    let _ = dotenvy::dotenv();
     let config = Config {
         bot_token: env::var("BOT_TOKEN").context("BOT_TOKEN not set")?,
         db_url: env::var("DATABASE_URL").context("DATABASE_URL not set")?,
