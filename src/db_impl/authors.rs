@@ -8,10 +8,10 @@ use tracing::error;
 use crate::schema::{authors, confession};
 
 pub async fn get_author_by_hash(
-    db_url: String,
+    db_url: &String,
     hash: String,
 ) -> Result<i32, Box<dyn Error + Send + Sync>> {
-    let mut connection = establish_connection(db_url);
+    let mut connection = establish_connection(&db_url);
     match authors::table
         .select(authors::id)
         .filter(authors::hash.eq(hash))
@@ -23,11 +23,11 @@ pub async fn get_author_by_hash(
 }
 
 pub async fn get_author_hash_by_message(
-    db_url: String,
-    message_id: String,
-    guild_id: String,
+    db_url: &String,
+    message_id: &String,
+    guild_id: &String,
 ) -> Result<String, Box<dyn Error + Send + Sync>> {
-    let mut connection = establish_connection(db_url);
+    let mut connection = establish_connection(&db_url);
     let author_id = match confession::table
         .select(confession::author)
         .filter(
@@ -58,10 +58,10 @@ pub async fn get_author_hash_by_message(
 }
 
 pub async fn insert_author(
-    db_url: String,
-    author_id: String,
+    db_url: &String,
+    author_id: &String,
 ) -> Result<i32, Box<dyn Error + Send + Sync>> {
-    let mut connection = establish_connection(db_url.clone());
+    let mut connection = establish_connection(db_url);
     let mut context = Context::new(&SHA256);
     context.update(author_id.as_bytes());
     let hash = format!("{:X?}", context.finish());

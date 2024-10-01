@@ -12,7 +12,7 @@ use crate::{
     },
 };
 
-pub async fn get_guild(db_url: String, guild_id: String) -> Result<Option<Guild>, result::Error> {
+pub async fn get_guild(db_url: &String, guild_id: &String) -> Result<Option<Guild>, result::Error> {
     let mut conn = establish_connection(db_url);
     guild::table
         .filter(guild::guild_id.eq(guild_id))
@@ -24,7 +24,7 @@ pub async fn get_guild_config(
     db_url: &String,
     guild_id: &String,
 ) -> Result<GuildConfig, Box<dyn Error + Send + Sync>> {
-    let mut conn = establish_connection(db_url.clone());
+    let mut conn = establish_connection(db_url);
     match guild::table
         .select(guild::config)
         .filter(guild::guild_id.eq(guild_id))
@@ -35,7 +35,7 @@ pub async fn get_guild_config(
     }
 }
 
-pub async fn insert_guild(db_url: String, guild_id: String) -> Result<(), result::Error> {
+pub async fn insert_guild(db_url: &String, guild_id: &String) -> Result<(), result::Error> {
     let mut conn = establish_connection(db_url);
     let default_config = GuildConfig {
         delete_vote_min: 10,
@@ -59,8 +59,8 @@ pub async fn insert_guild(db_url: String, guild_id: String) -> Result<(), result
 }
 
 pub async fn update_guild(
-    db_url: String,
-    guild_id: String,
+    db_url: &String,
+    guild_id: &String,
     confession_channel_id: Option<String>,
     config: GuildConfig,
 ) -> Result<(), result::Error> {

@@ -32,7 +32,7 @@ pub async fn config_guild(
     let data = ctx.data();
     let config = data.config.read().await;
     if let Some(guild_id) = ctx.guild_id() {
-        if let Some(guild) = guilds::get_guild(config.db_url.clone(), guild_id.to_string()).await? {
+        if let Some(guild) = guilds::get_guild(&config.db_url, &guild_id.to_string()).await? {
             let mut changelog = String::new();
             let mut guild_config: GuildConfig = serde_json::from_str(guild.config.as_str())?;
             if let Some(delete_vote_min_res) = delete_vote_min {
@@ -80,8 +80,8 @@ pub async fn config_guild(
 
             if let Some(guild_id) = ctx.guild_id() {
                 guilds::update_guild(
-                    config.db_url.clone(),
-                    guild_id.to_string(),
+                    &config.db_url,
+                    &guild_id.to_string(),
                     if let Some(channel_id_res) = channel_id {
                         // TODO: Check if channel is text based
                         changelog.push_str(

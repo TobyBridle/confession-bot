@@ -152,9 +152,9 @@ pub async fn event_handler(
                             .get_guild(cmp.guild_id.unwrap())
                             .await?;
                         let author_hash = get_author_hash_by_message(
-                            config.db_url.clone(),
-                            cmp.message.id.to_string(),
-                            guild_id,
+                            &config.db_url,
+                            &cmp.message.id.to_string(),
+                            &guild_id,
                         )
                         .await?;
                         let mut first_author_id: Option<UserId> = None;
@@ -267,7 +267,7 @@ pub async fn event_handler(
             if *new_guild {
                 let data = framework.serenity_context.data::<Data>();
                 let config = data.config.read().await;
-                guilds::insert_guild(config.db_url.clone(), guild.id.to_string()).await?;
+                guilds::insert_guild(&config.db_url, &guild.id.to_string()).await?;
                 info!("Joined Guild {}", guild.id)
             }
         }
@@ -278,7 +278,7 @@ pub async fn event_handler(
                 if let Some(guild_id) = new_message.guild_id {
                     let guild = {
                         if let Some(g) =
-                            guilds::get_guild(config.db_url.clone(), guild_id.to_string()).await?
+                            guilds::get_guild(&config.db_url, &guild_id.to_string()).await?
                         {
                             g
                         } else {

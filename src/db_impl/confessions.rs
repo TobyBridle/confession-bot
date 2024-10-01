@@ -13,9 +13,9 @@ use crate::{
 };
 
 pub async fn get_confession_by_id(
-    db_url: String,
-    message_id: String,
-    _guild_id: String,
+    db_url: &String,
+    message_id: &String,
+    _guild_id: &String,
 ) -> Result<Confession, Box<dyn Error + Send + Sync>> {
     let mut connection = establish_connection(db_url);
     match guild::table
@@ -34,8 +34,8 @@ pub async fn get_confession_by_id(
 }
 
 pub async fn get_confession_count(
-    db_url: String,
-    _guild_id: String,
+    db_url: &String,
+    _guild_id: &String,
 ) -> Result<i64, Box<dyn Error + Send + Sync>> {
     use self::confession::dsl::*;
     let mut connection = establish_connection(db_url);
@@ -50,13 +50,13 @@ pub async fn get_confession_count(
 }
 
 pub async fn insert_confession(
-    db_url: String,
-    message_id: String,
-    _author_id: String,
-    _guild_id: String,
-    content: String,
+    db_url: &String,
+    message_id: &String,
+    _author_id: &String,
+    _guild_id: &String,
+    content: &String,
 ) -> Result<(), Box<dyn Error + Send + Sync>> {
-    let author_id = insert_author(db_url.clone(), _author_id).await?;
+    let author_id = insert_author(db_url, _author_id).await?;
     let mut conn = establish_connection(db_url);
     match diesel::insert_into(confession::table)
         .values((

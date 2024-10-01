@@ -28,7 +28,7 @@ pub async fn confession(
     let config = data.config.read().await;
     let guild_id = ctx.guild_id().ok_or("Not in a guild")?;
 
-    let guild = match guilds::get_guild(config.db_url.clone(), guild_id.to_string()).await? {
+    let guild = match guilds::get_guild(&config.db_url, &guild_id.to_string()).await? {
         Some(guild) => guild,
         None => {
             ctx.send(CreateReply::default().embed(
@@ -38,7 +38,7 @@ pub async fn confession(
                     .description("The current Guild does not exist within the Bot's Database. Please attempt to run the command again.")
             ))
             .await?;
-            guilds::insert_guild(config.db_url.clone(), guild_id.to_string()).await?;
+            guilds::insert_guild(&config.db_url, &guild_id.to_string()).await?;
             return Ok(());
         }
     };
@@ -94,8 +94,7 @@ pub async fn confession(
         }
     };
 
-    let count = match confessions::get_confession_count(config.db_url.clone(), guild_id.to_string())
-        .await
+    let count = match confessions::get_confession_count(&config.db_url, &guild_id.to_string()).await
     {
         Ok(count) => count,
         Err(e) => {
@@ -129,11 +128,11 @@ pub async fn confession(
     match message_res {
         Ok(message) => {
             if let Err(e) = insert_confession(
-                config.db_url.clone(),
-                message.id.to_string(),
-                ctx.author().id.to_string(),
-                guild_id.to_string(),
-                content,
+                &config.db_url,
+                &message.id.to_string(),
+                &ctx.author().id.to_string(),
+                &guild_id.to_string(),
+                &content,
             )
             .await
             {

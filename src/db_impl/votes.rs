@@ -29,7 +29,7 @@ pub async fn update_vote(
     context.update(author_id.as_bytes());
     let hash = format!("{:X?}", context.finish());
 
-    let guild = match get_guild(db_url.clone(), guild_id.clone()).await? {
+    let guild = match get_guild(db_url, guild_id).await? {
         Some(guild) => guild,
         None => {
             return Err(Box::from(format!(
@@ -54,13 +54,12 @@ pub async fn update_vote(
 
     let vote_type_str: String = vote_type.into();
 
-    let mut connection = establish_connection(db_url.clone());
+    let mut connection = establish_connection(db_url);
 
-    let confession =
-        get_confession_by_id(db_url.clone(), message_id.clone(), guild_id.clone()).await?;
+    let confession = get_confession_by_id(db_url, message_id, guild_id).await?;
 
     // Insert (or, if conflicting, get) the author for the hashed user ID
-    let author = insert_author(db_url.clone(), hash).await?;
+    let author = insert_author(db_url, &hash).await?;
 
     let total_votes = match delete_votes::table
         .filter(
