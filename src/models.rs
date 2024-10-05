@@ -74,3 +74,19 @@ pub struct Vote {
     pub vote_type: String,
     pub timestamp: chrono::NaiveDateTime,
 }
+
+#[derive(Queryable, Selectable, Associations, PartialEq)]
+#[diesel(belongs_to(Author, foreign_key=author))]
+#[diesel(belongs_to(Guild, foreign_key=guild_id))]
+#[diesel(belongs_to(Confession, foreign_key=original_confession_id))]
+#[diesel(table_name = crate::schema::replies)]
+#[diesel(check_for_backend(diesel::sqlite::Sqlite))]
+pub struct Reply {
+    pub id: i32,
+    pub guild_id: String,
+    pub original_confession_id: i32,
+    pub author: i32,
+    pub message_id: String,
+    pub content: String,
+    pub timestamp: chrono::NaiveDateTime,
+}
