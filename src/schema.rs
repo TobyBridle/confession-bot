@@ -15,6 +15,7 @@ diesel::table! {
         content -> Text,
         author -> Integer,
         timestamp -> Timestamp,
+        deleted -> Integer,
     }
 }
 

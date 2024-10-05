@@ -51,6 +51,7 @@ pub struct Confession {
     pub content: String,
     pub author: i32,
     pub timestamp: chrono::NaiveDateTime,
+    pub deleted: i32,
 }
 
 #[derive(Insertable)]

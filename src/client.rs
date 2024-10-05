@@ -9,7 +9,11 @@ use crate::{commands::*, Config};
 pub async fn start(config: Config) -> anyhow::Result<()> {
     let framework = Framework::builder()
         .options(FrameworkOptions {
-            commands: vec![confess::confession(), config::config_guild()],
+            commands: vec![
+                confess::confession(),
+                reply::reply(),
+                config::config_guild(),
+            ],
             event_handler: |ctx, event| Box::pin(event_handler(ctx, event)),
             on_error: |err| Box::pin(on_error(err)),
             ..Default::default()

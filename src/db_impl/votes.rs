@@ -1,6 +1,9 @@
 use std::error::Error;
 
-use crate::models::{GuildConfig, Vote};
+use crate::{
+    models::{GuildConfig, Vote},
+    schema::confession,
+};
 use confession_bot_rs::{establish_connection, schema::delete_votes, VoteType, DELETE_VOTE_STR};
 use diesel::{BoolExpressionMethods, ExpressionMethods, IntoSql, QueryDsl, RunQueryDsl};
 use ring::digest::{Context, SHA256};
@@ -9,6 +12,57 @@ use tracing::error;
 use crate::db_impl::{confessions::get_confession_by_message_id, guilds::get_guild};
 
 use super::authors::insert_author;
+
+pub async fn get_vote(
+    db_url: &String,
+    message_id: &String,
+    guild_id: &String,
+    vote_type: VoteType,
+) -> Result<(u32, u32), Box<dyn Error + Send + Sync>> {
+    let guild = match get_guild(db_url, guild_id).await? {
+        Some(guild) => guild,
+        None => {
+            return Err(Box::from(format!(
+                "Could not find a guild with Guild ID: {}",
+                &guild_id
+            )))
+        }
+    };
+
+    let config = match serde_json::from_str::<GuildConfig>(guild.config.as_str()) {
+        Ok(cfg) => cfg,
+        Err(e) => {
+            error!("Could not parse config {}. Reason: {:?}", guild.config, e);
+            return Err(Box::from(e));
+        }
+    };
+
+    let min_vote = match vote_type {
+        VoteType::DELETE => config.delete_vote_min,
+        VoteType::EXPOSE => config.expose_vote_min,
+    } as u32;
+
+    let vote_type_str: String = vote_type.into();
+
+    let mut connection = establish_connection(db_url);
+
+    let confession = get_confession_by_message_id(db_url, message_id, guild_id).await?;
+
+    match delete_votes::table
+        .filter(
+            delete_votes::confession_id
+                .eq(confession.id)
+                .and(delete_votes::vote_type.eq(&vote_type_str)),
+        )
+        .count()
+        .get_result::<i64>(&mut connection)
+    {
+        Ok(count) => return Ok((count as u32, min_vote)),
+        Err(e) => {
+            return Err(Box::from(e));
+        }
+    };
+}
 
 /// Update the votes for the confession within the DB. If the user has already
 /// voted, their vote is removed.
@@ -106,6 +160,9 @@ pub async fn update_vote(
                     .eq(confession.id)
                     .and(delete_votes::vote_type.eq(vote_type_str)),
             )
+            .execute(&mut connection)?;
+        diesel::update(confession::table.filter(confession::id.eq(confession.id)))
+            .set(confession::deleted.eq(1))
             .execute(&mut connection)?;
         return Ok((min_vote, min_vote));
     }
