@@ -6,7 +6,7 @@ use diesel::{BoolExpressionMethods, ExpressionMethods, IntoSql, QueryDsl, RunQue
 use ring::digest::{Context, SHA256};
 use tracing::error;
 
-use crate::db_impl::{confessions::get_confession_by_id, guilds::get_guild};
+use crate::db_impl::{confessions::get_confession_by_message_id, guilds::get_guild};
 
 use super::authors::insert_author;
 
@@ -56,7 +56,7 @@ pub async fn update_vote(
 
     let mut connection = establish_connection(db_url);
 
-    let confession = get_confession_by_id(db_url, message_id, guild_id).await?;
+    let confession = get_confession_by_message_id(db_url, message_id, guild_id).await?;
 
     // Insert (or, if conflicting, get) the author for the hashed user ID
     let author = insert_author(db_url, &hash).await?;

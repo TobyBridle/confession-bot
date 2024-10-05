@@ -12,7 +12,25 @@ use crate::{
     },
 };
 
-pub async fn get_confession_by_id(
+pub async fn get_confession_by_id_guild(
+    db_url: &String,
+    confession_id: u32,
+    guild_id: &String,
+) -> Result<Confession, Box<dyn Error + Send + Sync>> {
+    let mut connection = establish_connection(db_url);
+    match guild::table
+        .inner_join(confession::table)
+        .limit(1)
+        .offset((confession_id - 1).into())
+        .select(Confession::as_select())
+        .get_result(&mut connection)
+    {
+        Ok(c) => Ok(c.clone()),
+        Err(e) => Err(Box::new(e)),
+    }
+}
+
+pub async fn get_confession_by_message_id(
     db_url: &String,
     message_id: &String,
     _guild_id: &String,
