@@ -120,8 +120,8 @@ pub async fn reply(
             confession.id,
             &confession.guild_id,
             &message_res.id.to_string(),
-            &ctx.author().id.to_string(),
             &content,
+            &ctx.author().id.to_string(),
         )
         .await?;
     } else {
