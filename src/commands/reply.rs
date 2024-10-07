@@ -125,11 +125,10 @@ pub async fn reply(
         )
         .await?;
     } else {
-        ctx.reply(format!(
+        return Err(Box::from(format!(
             "Could not find confession with ID `{}` in the Guild.",
             id
-        ))
-        .await?;
+        )));
     }
     ctx.reply(format!("Successfully replied to Confession {}", id))
         .await?;
