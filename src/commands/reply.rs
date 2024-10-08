@@ -62,11 +62,11 @@ pub async fn reply(
 
         let mut map = HashMap::new();
         map.insert("name", format!("Confession {} replies", id));
-        let reply_channel: GuildChannel = if get_confession_replies(&config.db_url, confession.id)
+        let reply_count = get_confession_replies(&config.db_url, confession.id)
             .await?
-            .len()
-            == 0
-        {
+            .len();
+
+        let reply_channel: GuildChannel = if reply_count == 0 {
             match ctx
                 .http()
                 .create_thread_from_message(
@@ -103,7 +103,7 @@ pub async fn reply(
                 CreateMessage::default().embed(
                     CreateEmbed::default()
                         .color(random::<u16>() as u32)
-                        .title(format!("Response to Confession"))
+                        .title(format!("Response #{} to Confession", reply_count + 1))
                         .description(content.clone()),
                 ),
             )
