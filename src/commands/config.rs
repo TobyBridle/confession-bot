@@ -56,15 +56,27 @@ pub async fn config_guild(
                 guild_config.expose_vote_min = expose_vote_min_res;
             }
             if let Some(expose_vote_role_res) = expose_vote_role {
-                changelog.push_str(
-                    format!(
-                        "Expose Vote Role: {} :arrow_right: {}\n",
-                        guild_config.expose_vote_role.unwrap_or("Unset".to_owned()),
-                        expose_vote_role_res
-                    )
-                    .as_str(),
-                );
-                guild_config.expose_vote_role = Some(expose_vote_role_res.to_string());
+                guild_config.expose_vote_role =
+                    if expose_vote_role_res.to_string() == guild_id.to_string() {
+                        changelog.push_str(
+                            format!(
+                                "Expose Vote Role: {} :arrow_right: Unset\n",
+                                guild_config.expose_vote_role.unwrap_or("Unset".to_owned()),
+                            )
+                            .as_str(),
+                        );
+                        None
+                    } else {
+                        changelog.push_str(
+                            format!(
+                                "Expose Vote Role: {} :arrow_right: {}\n",
+                                guild_config.expose_vote_role.unwrap_or("Unset".to_owned()),
+                                expose_vote_role_res
+                            )
+                            .as_str(),
+                        );
+                        Some(expose_vote_role_res.to_string())
+                    }
             }
             if let Some(role_ping_res) = role_ping {
                 changelog.push_str(
