@@ -50,6 +50,16 @@ diesel::table! {
     }
 }
 
+diesel::table! {
+    schedule (id) {
+        id -> Integer,
+        guild_id -> Text,
+        victim_id -> Text,
+        ends_at -> Integer,
+        start_at -> Integer,
+    }
+}
+
 diesel::joinable!(confession -> authors (author));
 diesel::joinable!(confession -> guild (guild_id));
 diesel::joinable!(delete_votes -> authors (author_id));
@@ -64,4 +74,5 @@ diesel::allow_tables_to_appear_in_same_query!(
     delete_votes,
     guild,
     replies,
+    schedule,
 );

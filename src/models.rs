@@ -91,3 +91,24 @@ pub struct Reply {
     pub content: String,
     pub timestamp: chrono::NaiveDateTime,
 }
+
+#[derive(Queryable, Selectable, Identifiable, PartialEq, Clone)]
+#[diesel(table_name = crate::schema::schedule)]
+#[diesel(check_for_backend(diesel::sqlite::Sqlite))]
+pub struct Schedule {
+    pub id: i32,
+    pub guild_id: String,
+    pub victim_id: String,
+    pub ends_at: i32,
+    pub start_at: i32,
+}
+
+#[derive(Insertable, PartialEq)]
+#[diesel(table_name = crate::schema::schedule)]
+#[diesel(check_for_backend(diesel::sqlite::Sqlite))]
+pub struct InsertSchedule {
+    pub guild_id: String,
+    pub victim_id: String,
+    pub ends_at: i32,
+    pub start_at: i32,
+}

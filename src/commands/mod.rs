@@ -16,6 +16,7 @@ use tokio::sync::RwLock;
 use tracing::{error, info};
 
 use crate::{
+    client::observe,
     db_impl::{
         authors::get_author_hash_by_message,
         guilds::{self, get_guild_config},
@@ -28,6 +29,7 @@ use crate::{
 pub mod confess;
 pub mod config;
 pub mod reply;
+pub mod schedule;
 
 pub struct Data {
     pub config: RwLock<Config>,
@@ -271,6 +273,7 @@ pub async fn event_handler(
                 guilds::insert_guild(&config.db_url, &guild.id.to_string()).await?;
                 info!("Joined Guild {}", guild.id)
             }
+            observe(framework, guild.clone()).await;
         }
         FullEvent::Message { new_message } => {
             if new_message.mentions_user_id(framework.bot_id()) {
