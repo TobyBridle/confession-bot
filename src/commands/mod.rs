@@ -251,6 +251,15 @@ pub async fn event_handler(
                 }
             }
         }
+        // FullEvent::GuildMemberUpdate { old_if_available, new, event } => {
+        //     /*
+        //     just dont bother deleting from the database until the timeout finish time is no longer
+        //     greater than this value below
+        //     basically means that the timeout does not go away ever and if the communication disabled here is less than the one in
+        //     the database it knows it's been removed and can reapply it ;)
+        //     */
+        //     // new.unwrap().communication_disabled_until
+        // }
         FullEvent::Ready { data_about_bot } => {
             info!(
                 "Logged in as: {}. Currently observing {} guild(s)",
