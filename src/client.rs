@@ -99,6 +99,9 @@ async fn process_schedules(
     .await??; // Await the task and propagate any errors
 
     for schedule in schedules {
+        if guild.id.to_string() != schedule.guild_id {
+            continue;
+        }
         if schedule.start_at as i64 <= Utc::now().timestamp() {
             info!(
                 "Disabling communication for member with ID: {}",
@@ -134,7 +137,12 @@ async fn disable_communication_for_member(
 ) -> Result<(), Error> {
     // Only attempt in the correct guild
     if guild.id.to_string() != schedule.guild_id {
-        return Ok(());
+        return Err(Box::from(format!(
+            "Cannot disable user {} in guild {}. Reason: Schedule was set for guild {}.",
+            schedule.victim_id,
+            guild.id.to_string(),
+            schedule.guild_id
+        )));
     }
 
     let victim_id = schedule.victim_id.parse::<u64>()?;
